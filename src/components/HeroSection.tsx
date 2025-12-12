@@ -3,7 +3,7 @@ const HeroSection = () => {
   return <div className="text-center mb-12 animate-fade-in">
       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-primary text-sm font-medium mb-6">
         <Sparkles className="w-4 h-4" />
-        <span>Sun'iy Intellekt Assistenti</span>
+        <span>Sun'iy Intellekt Assistenti JBN AI</span>
       </div>
       <h1 className="text-4xl md:text-6xl font-bold mb-6">
         <span className="text-foreground">Sizning</span>{" "}
