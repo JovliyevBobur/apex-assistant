@@ -7,9 +7,7 @@ const HeroSection = () => {
       </div>
       <h1 className="text-4xl md:text-6xl font-bold mb-6">
         <span className="text-foreground">Sizning</span>{" "}
-        <span className="gradient-text">Aqlli Yordamchingiz
-JBN AI man
-      </span>
+        <span className="gradient-text">Aqlli Yordamchingiz JBN AI </span>
       </h1>
       <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
         Murakkab vazifalarni hal qilish, ijodiy g'oyalar yaratish va savollaringizga 
