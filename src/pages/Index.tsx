@@ -9,11 +9,13 @@ import {
   GraduationCap,
   Calculator,
 } from "lucide-react";
+import { toast } from "sonner";
 import HeroSection from "@/components/HeroSection";
 import CapabilityCard from "@/components/CapabilityCard";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import BackgroundEffects from "@/components/BackgroundEffects";
+import { streamChat } from "@/lib/streamChat";
 
 interface Message {
   id: string;
@@ -64,16 +66,9 @@ const capabilities = [
   },
 ];
 
-const sampleResponses = [
-  "Ajoyib savol! Men sizga bu borada yordam berishdan mamnunman. Keling, bu masalani bosqichma-bosqich ko'rib chiqamiz...",
-  "Bu juda qiziqarli mavzu. Men sizga bir nechta muhim nuqtalarni tushuntirib beraman...",
-  "Albatta! Bu sizning maqsadlaringizga erishishda juda muhim qadam. Mana mening tavsiyalarim...",
-  "Yaxshi savol! Bu masalada bir nechta yondashuv mavjud. Eng samarali usulni ko'rib chiqamiz...",
-];
-
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +80,7 @@ const Index = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -94,20 +89,44 @@ const Index = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setShowChat(true);
-    setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const randomResponse =
-        sampleResponses[Math.floor(Math.random() * sampleResponses.length)];
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: randomResponse,
-        role: "assistant",
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+    let assistantContent = "";
+
+    const updateAssistant = (chunk: string) => {
+      assistantContent += chunk;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) =>
+            i === prev.length - 1 ? { ...m, content: assistantContent } : m
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            content: assistantContent,
+            role: "assistant",
+          },
+        ];
+      });
+    };
+
+    const allMessages = [...messages, userMessage].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    await streamChat({
+      messages: allMessages,
+      onDelta: updateAssistant,
+      onDone: () => setIsLoading(false),
+      onError: (error) => {
+        toast.error(error);
+        setIsLoading(false);
+      },
+    });
   };
 
   return (
@@ -134,7 +153,7 @@ const Index = () => {
 
             {/* Chat Input */}
             <div className="max-w-3xl mx-auto">
-              <ChatInput onSendMessage={handleSendMessage} />
+              <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
               <p className="text-center text-muted-foreground text-sm mt-4">
                 Savollaringizni yozing va sun'iy intellekt sizga yordam beradi
               </p>
@@ -167,14 +186,14 @@ const Index = () => {
                   role={message.role}
                 />
               ))}
-              {isTyping && (
+              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
                 <ChatMessage content="" role="assistant" isTyping />
               )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
-            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+            <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
           </div>
         )}
       </div>
