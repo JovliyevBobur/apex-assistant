@@ -6,7 +6,9 @@ import CapabilityCard from "@/components/CapabilityCard";
 import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import BackgroundEffects from "@/components/BackgroundEffects";
+import LanguageSelector, { type Language } from "@/components/LanguageSelector";
 import { streamChat } from "@/lib/streamChat";
+
 interface Message {
   id: string;
   content: string;
@@ -49,6 +51,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [language, setLanguage] = useState<Language>("uz");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -91,6 +94,7 @@ const Index = () => {
     }));
     await streamChat({
       messages: allMessages,
+      language,
       onDelta: updateAssistant,
       onDone: () => setIsLoading(false),
       onError: error => {
@@ -101,6 +105,11 @@ const Index = () => {
   };
   return <div className="min-h-screen bg-background relative">
       <BackgroundEffects />
+      
+      {/* Language Selector - Always visible */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSelector value={language} onChange={setLanguage} />
+      </div>
 
       <div className="relative z-10 container max-w-6xl mx-auto px-4 py-8 md:py-16">
         {!showChat ? <>
