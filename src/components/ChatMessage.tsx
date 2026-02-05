@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessageProps {
   content: string;
@@ -37,7 +38,9 @@ const ChatMessage = ({ content, role, isTyping }: ChatMessageProps) => {
             <span className="w-2 h-2 bg-primary rounded-full animate-typing" style={{ animationDelay: "300ms" }} />
           </div>
         ) : (
-          <p className="whitespace-pre-wrap">{content}</p>
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-pre:bg-background/50 prose-pre:border prose-pre:border-border prose-code:text-primary prose-code:bg-background/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
         )}
       </div>
       {!isAssistant && (
