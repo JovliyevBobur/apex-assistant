@@ -6,9 +6,10 @@ interface ChatMessageProps {
   content: string;
   role: "user" | "assistant";
   isTyping?: boolean;
+  images?: Array<{ type: string; image_url: { url: string } }>;
 }
 
-const ChatMessage = ({ content, role, isTyping }: ChatMessageProps) => {
+const ChatMessage = ({ content, role, isTyping, images }: ChatMessageProps) => {
   const isAssistant = role === "assistant";
 
   return (
@@ -38,9 +39,24 @@ const ChatMessage = ({ content, role, isTyping }: ChatMessageProps) => {
             <span className="w-2 h-2 bg-primary rounded-full animate-typing" style={{ animationDelay: "300ms" }} />
           </div>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-pre:bg-background/50 prose-pre:border prose-pre:border-border prose-code:text-primary prose-code:bg-background/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </div>
+          <>
+            {images && images.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img.image_url.url}
+                    alt="Generated image"
+                    className="rounded-xl max-w-full border border-border"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+            )}
+            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-pre:bg-background/50 prose-pre:border prose-pre:border-border prose-code:text-primary prose-code:bg-background/50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
+          </>
         )}
       </div>
       {!isAssistant && (
