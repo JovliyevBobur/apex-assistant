@@ -6,12 +6,17 @@ interface CapabilityCardProps {
   title: string;
   description: string;
   delay?: number;
+  onClick?: () => void;
 }
 
-const CapabilityCard = ({ icon: Icon, title, description, delay = 0 }: CapabilityCardProps) => {
+const CapabilityCard = ({ icon: Icon, title, description, delay = 0, onClick }: CapabilityCardProps) => {
   return (
     <div
-      className="glass rounded-2xl p-6 hover:glow transition-all duration-500 group cursor-pointer animate-slide-up"
+      onClick={onClick}
+      className={cn(
+        "glass rounded-2xl p-6 hover:glow transition-all duration-500 group cursor-pointer animate-slide-up",
+        onClick && "active:scale-95"
+      )}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors duration-300">
