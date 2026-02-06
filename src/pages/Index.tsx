@@ -46,6 +46,8 @@ const Index = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrolledUp = useRef(false);
 
   // Realtime sync
   useRealtimeMessages(currentConversationId, setMessages);
@@ -54,8 +56,18 @@ const Index = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const threshold = 100;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    isUserScrolledUp.current = !isAtBottom;
+  }, []);
+
   useEffect(() => {
-    scrollToBottom();
+    if (!isUserScrolledUp.current) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   const createNewConversation = async (): Promise<string | null> => {
@@ -324,7 +336,11 @@ const Index = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide"
+            >
               {messages.map(message => (
                 <ChatMessage
                   key={message.id}
