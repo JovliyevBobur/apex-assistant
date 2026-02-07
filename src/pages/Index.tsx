@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Code, Brain, Lightbulb, Languages, TrendingUp, Palette, GraduationCap, Calculator, Menu, LogOut, User, ImagePlus } from "lucide-react";
+import { Code, Brain, Lightbulb, Languages, TrendingUp, Palette, GraduationCap, Calculator, Menu, LogOut, User } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface AttachedFile {
   file: File;
@@ -258,6 +259,7 @@ const Index = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LanguageSelector value={language} onChange={setLanguage} />
 
           {authLoading ? (
@@ -331,7 +333,7 @@ const Index = () => {
 
             {/* Chat Input */}
             <div className="max-w-3xl mx-auto">
-              <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+              <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} language={language} />
               <p className="text-center text-muted-foreground text-sm mt-4">
                 {user
                   ? "Savollaringizni yozing va sun'iy intellekt sizga yordam beradi"
@@ -373,7 +375,7 @@ const Index = () => {
             </div>
 
             {/* Input */}
-            <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+            <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} language={language} />
           </div>
         )}
       </div>

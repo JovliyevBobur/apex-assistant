@@ -1,6 +1,8 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, useCallback, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, Globe, GraduationCap, ImagePlus, X, Image } from "lucide-react";
+import { Send, Paperclip, Globe, GraduationCap, ImagePlus, X, Mic, MicOff } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { cn } from "@/lib/utils";
 
 interface AttachedFile {
   file: File;
@@ -11,6 +13,7 @@ interface AttachedFile {
 interface ChatInputProps {
   onSendMessage: (message: string, files?: AttachedFile[]) => void;
   disabled?: boolean;
+  language?: string;
 }
 
 const actionButtons = [
@@ -20,14 +23,32 @@ const actionButtons = [
   { icon: ImagePlus, label: "Rasm yaratish", action: "image" },
 ];
 
-const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
+const langMap: Record<string, string> = {
+  uz: "uz-UZ",
+  en: "en-US",
+  ru: "ru-RU",
+  ar: "ar-SA",
+};
+
+const ChatInput = ({ onSendMessage, disabled, language = "uz" }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleVoiceResult = useCallback((transcript: string) => {
+    setMessage((prev) => (prev ? prev + " " + transcript : transcript));
+  }, []);
+
+  const { isListening, transcript, isSupported, toggleListening } =
+    useSpeechRecognition({
+      language: langMap[language] || "uz-UZ",
+      onResult: handleVoiceResult,
+    });
+
   const handleSend = () => {
-    if ((message.trim() || attachedFiles.length > 0) && !disabled) {
-      onSendMessage(message.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
+    const text = isListening ? (message + " " + transcript).trim() : message.trim();
+    if ((text || attachedFiles.length > 0) && !disabled) {
+      onSendMessage(text, attachedFiles.length > 0 ? attachedFiles : undefined);
       setMessage("");
       setAttachedFiles([]);
     }
@@ -45,7 +66,7 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
     if (!files) return;
 
     const maxFiles = 5;
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
 
     Array.from(files).forEach((file) => {
       if (attachedFiles.length >= maxFiles) return;
@@ -55,13 +76,9 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
         ? URL.createObjectURL(file)
         : "";
 
-      setAttachedFiles((prev) => [
-        ...prev,
-        { file, preview, type: file.type },
-      ]);
+      setAttachedFiles((prev) => [...prev, { file, preview, type: file.type }]);
     });
 
-    // Reset input
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -87,10 +104,10 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
       case "image":
         onSendMessage("Rasm yarating: ");
         break;
-      default:
-        break;
     }
   };
+
+  const displayText = isListening && transcript ? (message ? message + " " + transcript : transcript) : message;
 
   return (
     <div className="space-y-2">
@@ -103,11 +120,7 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
               className="relative group rounded-xl border border-border overflow-hidden bg-muted/30"
             >
               {af.type.startsWith("image/") ? (
-                <img
-                  src={af.preview}
-                  alt={af.file.name}
-                  className="w-16 h-16 object-cover"
-                />
+                <img src={af.preview} alt={af.file.name} className="w-16 h-16 object-cover" />
               ) : (
                 <div className="w-16 h-16 flex items-center justify-center">
                   <Paperclip className="w-5 h-5 text-muted-foreground" />
@@ -127,9 +140,23 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
         </div>
       )}
 
+      {/* Listening indicator */}
+      {isListening && (
+        <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-primary animate-pulse">
+          <div className="flex gap-0.5">
+            <span className="w-1 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-1 h-4 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+            <span className="w-1 h-5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "100ms" }} />
+            <span className="w-1 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "250ms" }} />
+          </div>
+          <span>Tinglayapman...</span>
+        </div>
+      )}
+
       <div className="glass rounded-2xl p-2 flex items-end gap-2">
         <textarea
-          value={message}
+          value={displayText}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Savolingizni yozing..."
@@ -138,9 +165,27 @@ const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
           className="flex-1 bg-transparent border-none resize-none text-foreground placeholder:text-muted-foreground focus:outline-none px-4 py-3 text-sm max-h-32 min-h-[48px]"
           style={{ height: "auto" }}
         />
+
+        {/* Mic button */}
+        {isSupported && (
+          <Button
+            onClick={toggleListening}
+            disabled={disabled}
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "flex-shrink-0 rounded-xl transition-all",
+              isListening && "text-primary bg-primary/10 animate-pulse-glow"
+            )}
+            title={isListening ? "To'xtatish" : "Ovozli xabar"}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </Button>
+        )}
+
         <Button
           onClick={handleSend}
-          disabled={(!message.trim() && attachedFiles.length === 0) || disabled}
+          disabled={(!displayText.trim() && attachedFiles.length === 0) || disabled}
           variant="glow"
           size="icon"
           className="flex-shrink-0 rounded-xl"
