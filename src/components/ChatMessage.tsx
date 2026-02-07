@@ -3,14 +3,21 @@ import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import CodeBlock from "@/components/CodeBlock";
 
+interface AttachedFile {
+  file: File;
+  preview: string;
+  type: string;
+}
+
 interface ChatMessageProps {
   content: string;
   role: "user" | "assistant";
   isTyping?: boolean;
   images?: Array<{ type: string; image_url: { url: string } }>;
+  attachments?: AttachedFile[];
 }
 
-const ChatMessage = ({ content, role, isTyping, images }: ChatMessageProps) => {
+const ChatMessage = ({ content, role, isTyping, images, attachments }: ChatMessageProps) => {
   const isAssistant = role === "assistant";
 
   return (
@@ -41,6 +48,28 @@ const ChatMessage = ({ content, role, isTyping, images }: ChatMessageProps) => {
           </div>
         ) : (
           <>
+            {/* User attachments */}
+            {attachments && attachments.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {attachments.map((att, i) =>
+                  att.type.startsWith("image/") ? (
+                    <img
+                      key={i}
+                      src={att.preview}
+                      alt={att.file.name}
+                      className="rounded-xl max-w-[200px] max-h-[200px] object-cover border border-border"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border text-xs">
+                      <span>📎</span>
+                      <span className="truncate max-w-[150px]">{att.file.name}</span>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+            {/* AI generated images */}
             {images && images.length > 0 && (
               <div className="mb-3 space-y-2">
                 {images.map((img, i) => (

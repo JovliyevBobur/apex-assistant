@@ -17,11 +17,18 @@ import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
+interface AttachedFile {
+  file: File;
+  preview: string;
+  type: string;
+}
+
 interface Message {
   id: string;
   content: string;
   role: "user" | "assistant";
   images?: Array<{ type: string; image_url: { url: string } }>;
+  attachments?: AttachedFile[];
 }
 
 const capabilities = [
@@ -131,7 +138,7 @@ const Index = () => {
     return imageKeywords.some(kw => lower.includes(kw));
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, files?: AttachedFile[]) => {
     let conversationId = currentConversationId;
 
     if (!conversationId && user) {
@@ -141,7 +148,16 @@ const Index = () => {
       await updateConversationTitle(conversationId, content);
     }
 
-    const userMessage: Message = { id: Date.now().toString(), content, role: "user" };
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      role: "user",
+      attachments: files,
+      images: files?.filter(f => f.type.startsWith("image/")).map(f => ({
+        type: "image_url",
+        image_url: { url: f.preview },
+      })),
+    };
     setMessages(prev => [...prev, userMessage]);
     setShowChat(true);
     setIsLoading(true);
@@ -347,6 +363,7 @@ const Index = () => {
                   content={message.content}
                   role={message.role}
                   images={message.images}
+                  attachments={message.attachments}
                 />
               ))}
               {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
