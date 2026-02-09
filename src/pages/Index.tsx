@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Code, Brain, Lightbulb, Languages, TrendingUp, Palette, GraduationCap, Calculator, Menu, LogOut, User, Download, FileText, FileDown } from "lucide-react";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
@@ -53,6 +54,7 @@ const capabilities = [
 const Index = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const { speak, speakingMessageId } = useTextToSpeech();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -392,6 +394,9 @@ const Index = () => {
                   role={message.role}
                   images={message.images}
                   attachments={message.attachments}
+                  messageId={message.id}
+                  onSpeak={(text, id) => speak(text, id, language)}
+                  isSpeaking={speakingMessageId === message.id}
                 />
               ))}
               {isLoading && messages[messages.length - 1]?.role !== "assistant" && (

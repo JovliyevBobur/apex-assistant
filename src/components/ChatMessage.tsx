@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import CodeBlock from "@/components/CodeBlock";
 
@@ -15,9 +15,12 @@ interface ChatMessageProps {
   isTyping?: boolean;
   images?: Array<{ type: string; image_url: { url: string } }>;
   attachments?: AttachedFile[];
+  messageId?: string;
+  onSpeak?: (text: string, messageId: string) => void;
+  isSpeaking?: boolean;
 }
 
-const ChatMessage = ({ content, role, isTyping, images, attachments }: ChatMessageProps) => {
+const ChatMessage = ({ content, role, isTyping, images, attachments, messageId, onSpeak, isSpeaking }: ChatMessageProps) => {
   const isAssistant = role === "assistant";
 
   return (
@@ -113,6 +116,21 @@ const ChatMessage = ({ content, role, isTyping, images, attachments }: ChatMessa
                 {content}
               </ReactMarkdown>
             </div>
+            {/* TTS button for assistant messages */}
+            {isAssistant && content && onSpeak && messageId && (
+              <button
+                onClick={() => onSpeak(content, messageId)}
+                className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                title={isSpeaking ? "To'xtatish" : "Ovozli o'qish"}
+              >
+                {isSpeaking ? (
+                  <VolumeX className="w-3.5 h-3.5" />
+                ) : (
+                  <Volume2 className="w-3.5 h-3.5" />
+                )}
+                {isSpeaking ? "To'xtatish" : "Tinglash"}
+              </button>
+            )}
           </>
         )}
       </div>
