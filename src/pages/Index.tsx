@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Code, Brain, Lightbulb, Languages, TrendingUp, Palette, GraduationCap, Calculator, Menu, LogOut, User } from "lucide-react";
+import { Code, Brain, Lightbulb, Languages, TrendingUp, Palette, GraduationCap, Calculator, Menu, LogOut, User, Download, FileText, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
@@ -17,6 +17,13 @@ import { useRealtimeMessages } from "@/hooks/useRealtimeMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
+import { exportAsTxt, exportAsPdf } from "@/lib/exportChat";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AttachedFile {
   file: File;
@@ -351,6 +358,25 @@ const Index = () => {
               <div className="flex-1 text-center">
                 <h2 className="text-lg font-semibold gradient-text">JBN AI</h2>
               </div>
+              {messages.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-2 glass rounded-lg hover:bg-muted/50 transition-colors" title="Eksport">
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportAsTxt(messages, "JBN AI Chat")}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      TXT formatda saqlash
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportAsPdf(messages, "JBN AI Chat")}>
+                      <FileDown className="w-4 h-4 mr-2" />
+                      PDF formatda saqlash
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             {/* Messages */}

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, KeyboardEvent } from "react";
+import { useState, useRef, useCallback, KeyboardEvent, DragEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, Paperclip, Globe, GraduationCap, ImagePlus, X, Mic, MicOff } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -30,9 +30,14 @@ const langMap: Record<string, string> = {
   ar: "ar-SA",
 };
 
+const MAX_FILES = 5;
+const MAX_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/*", ".pdf", ".txt", ".doc", ".docx", ".csv", ".json"];
+
 const ChatInput = ({ onSendMessage, disabled, language = "uz" }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleVoiceResult = useCallback((transcript: string) => {
@@ -44,6 +49,22 @@ const ChatInput = ({ onSendMessage, disabled, language = "uz" }: ChatInputProps)
       language: langMap[language] || "uz-UZ",
       onResult: handleVoiceResult,
     });
+
+  const addFiles = useCallback((fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    setAttachedFiles((prev) => {
+      let updated = [...prev];
+      for (const file of files) {
+        if (updated.length >= MAX_FILES) break;
+        if (file.size > MAX_SIZE) continue;
+        const preview = file.type.startsWith("image/")
+          ? URL.createObjectURL(file)
+          : "";
+        updated.push({ file, preview, type: file.type });
+      }
+      return updated;
+    });
+  }, []);
 
   const handleSend = () => {
     const text = isListening ? (message + " " + transcript).trim() : message.trim();
@@ -62,23 +83,9 @@ const ChatInput = ({ onSendMessage, disabled, language = "uz" }: ChatInputProps)
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
-    const maxFiles = 5;
-    const maxSize = 10 * 1024 * 1024;
-
-    Array.from(files).forEach((file) => {
-      if (attachedFiles.length >= maxFiles) return;
-      if (file.size > maxSize) return;
-
-      const preview = file.type.startsWith("image/")
-        ? URL.createObjectURL(file)
-        : "";
-
-      setAttachedFiles((prev) => [...prev, { file, preview, type: file.type }]);
-    });
-
+    if (e.target.files) {
+      addFiles(e.target.files);
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -107,10 +114,65 @@ const ChatInput = ({ onSendMessage, disabled, language = "uz" }: ChatInputProps)
     }
   };
 
+  // Drag-and-drop handlers
+  const handleDragEnter = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set false if leaving the container (not entering a child)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const { clientX, clientY } = e;
+    if (
+      clientX < rect.left ||
+      clientX > rect.right ||
+      clientY < rect.top ||
+      clientY > rect.bottom
+    ) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      addFiles(e.dataTransfer.files);
+    }
+  };
+
   const displayText = isListening && transcript ? (message ? message + " " + transcript : transcript) : message;
 
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2 relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 rounded-2xl border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Paperclip className="w-8 h-8 animate-bounce" />
+            <span className="text-sm font-medium">Fayllarni shu yerga tashlang</span>
+          </div>
+        </div>
+      )}
+
       {/* Attached files preview */}
       {attachedFiles.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap px-2">
